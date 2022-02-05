@@ -1,6 +1,6 @@
 
 function get_user_data(){
-    // reads the cookie to get a JSON block of user name, email, roles 
+    // reads the cookie to get a JSON block of user name, email, roles VISIBLE
     try{
       return JSON.parse(atob(get_cookie("data")))
     }catch(e){
