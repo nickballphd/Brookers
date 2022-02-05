@@ -28,7 +28,7 @@ const authenticated_menu=[
         {label:"Change Password",function:"change_password()",panel: "password_panel"},
         {label:"Personal Data",function:"navigate({fn:'personal_data'})"},
     ]},
-    {label:"Logout",function:"logout()"},
+    {label:"Logout",function:"logout()", home:"Logout"},
     {label:"Member List",function:"navigate({fn:'email_list'})",roles:["member"]},
     {label:"Admin Tools",id:"menu2", roles:["administrator"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"}
