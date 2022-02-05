@@ -1,5 +1,5 @@
 
-//gas project /apps/plant simple/system
+//gas project /apps/plant simple/system VISIBLE
 gas_deployment_id='AKfycbxXIh853bSx3uJHGYSiGITopaNLrRVywU187rND69yYtyK4QMSXnm6pS7sqpACr45gywA'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
