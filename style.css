@@ -1,0 +1,67 @@
+html {zoom: 100%;}
+
+body{
+    padding:0;
+    background-image: url("https://blogger.googleusercontent.com/img/a/AVvXsEgRL2_xgEeawjL-QVzM6FafKHcdo7MLUx5ZOYCEWLI7r4XtpUAO5L8piuuXAOaf4vqfPXMOtJgLJG1P9pXtxBcvN1pk6j0CyWatjz6S_QaghpaoPe_loxgHqJ90wRtHhrnd5eYNxVaR6HaReuJfDUQOuzoBBDIgj8UN4GCS0inTRgyvFAtZvUp8hlI1=s1500");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-origin: content-box ;
+    background-attachment: fixed;
+    text-align: left;
+    min-width: 200px;
+}
+
+h1 {
+    color: yellow;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    font-size: 2rem;
+    line-height: 2rem;
+    text-align: center;
+}
+
+.center-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+#welcome{
+    background-color: rgba(255,255,255,0.8);
+    display:inline-block;
+    margin:3rem;
+    padding:1rem 2rem 1rem 2rem ;
+    text-align: left;
+}
+
+.white-box{
+    background-color: rgba(255,255,255,0.9);
+    display:inline-block;
+    padding:1rem;
+    text-align: left;
+    font-size: 14px;
+}
+
+#welcome p{
+    line-height: 1.1rem;
+    font-weight: bold;
+}
+
+#hamburger{
+    cursor: pointer; 
+    /*background-color:white; */
+    color:black; 
+    padding:4px;
+    margin:0;
+    font-size: 1.2rem;
+}
+
+.tools{
+    color:grey;
+    cursor:pointer;
+}
+
+.tools:hover{
+    color:green;
+}
