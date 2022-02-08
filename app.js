@@ -1,24 +1,20 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbxQbT-uszRtynO-KLKJ0iCTM0Qq1zeP-t2IPdB7f4tGE5Hbl2H5lGNOqGInGlWYAzr8dg'
+gas_deployment_id='AKfycbxyyKDnGFO0T0R3qxJZO8XqkZeAMbDKSpFcwGggDMm93kwPNjHmbZsEXyirngXubqaYxQ'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
 const nav_menu=[
     {label:"Home",function:"navigate({fn:'show_home'})"},
-    {label:"Schedule",function:"navigate({fn:'show_schedule'})", home:"Schedule"},
-    {label:"Recipes",function:"navigate({fn:'show_recipes'})", home:"Recipes"},
-    {label:"List Topics",function:"navigate({fn:'show_topics'})", home:"Topics",roles:["user"]},
-    {label:"Add Topics",function:"navigate({fn:'add_topics'})", roles:["member"]},
 ]
 
 
 const unauthenticated_menu=[
     {menu:nav_menu},
     {},
-    {label:"Login",function:"login()",panel:"login_panel"},
-    {label:"Recover Password",function:"recover_password()",panel:"recover"},
-    {label:"Create Account",function:"navigate({fn:'create_account'})", home:"Join"},
+    {label:"Login",function:"login()",home:"Login",panel:"login_panel"},
+    
+    {label:"Recover Password",function:"recover_password()",panel:"recover"}, 
 ]
 //{label:get_user_name()},
 const authenticated_menu=[
@@ -29,7 +25,7 @@ const authenticated_menu=[
         {label:"Personal Data",function:"navigate({fn:'personal_data'})"},
     ]},
     {label:"Logout",function:"logout()", home:"Logout"},
-    {label:"Member List",function:"navigate({fn:'email_list'})",roles:["member"]},
+    {label:"Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory'})"},
     {label:"Admin Tools",id:"menu2", roles:["manager","owner"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"}
     ]},
@@ -53,17 +49,12 @@ function show_home(){
 
     tag("canvas").innerHTML=` 
     <div class="center-screen">
-    <div id="welcome">
-    <h1>Plant Simple Provo</h1>
-    <p>
-    Plant Simple Provo is an in-person support group for people interested in learning more about living a whole-food, plant-based lifestyle.
-    </p><p>
-    We meet most every month and discuss books and videos, share recipies, have demonstrations for how to prepare healthy dishes, and support each other in living the good life fuled by simple, plant-based foods.
-    </p>
+    
+    <p><img height="${window.innerHeight * .6}" src="https://www.brookersicecream.com/wp-content/uploads/2018/08/brookers-logo-final-large.png"></p>
     <div style="text-align:center"><p>${menu.join(" | ")}</p></div>
     
     
-    </div></div>
+    </div>
     `
 
 
@@ -141,77 +132,89 @@ function show_recipes(){
     window.open("/index.html", '_blank');
 }
 
-async function email_list(){
+async function ice_cream_inventory(params){
+    console.log("at ice_cream_inventory ")
     hide_menu()
-    tag("canvas").innerHTML=` 
-    <div class="center-screen">
-        <div class="white-box">
-            <h2>Member List</h2>
-            <div id="member-list-message" style="max-width:400px;padding-top:1rem;margin-bottom:1rem">
-            Member information is private and should not be shared with individuals
-            who are not members of the group.
+    if(!params){
+        tag("canvas").innerHTML=` 
+            <div style="text-align:center"><h2>Ice Cream Inventory</h2></div>
+            <div id="inventory_panel">
+            <div id="inventory-message"></div>
+            
             </div>
-            <div id="member_list_panel">
-            <i class="fas fa-spinner fa-pulse"></i>
-            </div>
-        </div>
-    </div>
-    `
-    const response=await post_data({
-        mode:"member_email_list",
-        filter:""
-    })
+        `
+        const user_data = get_user_data()
+        console.log ("user_data",user_data)
+        if(user_data.store.length===1){
+            tag("inventory-message").innerHTML='<i class="fas fa-spinner fa-pulse"></i>'
+            ice_cream_inventory({
+                mode:"get_inventory_list",
+                filter:"list='Ice Cream'",
+                store:user_data.store[0]
+            })
+        }else{
+          //add form to select store
 
-    const labels={
-        first_name:"First Name",
-        last_name:"Last Name",
-        email:"Email",
-        phone:"Phone",
-    }
-
-
-    const is_admin=intersect(get_user_data().roles, "administrator").length>0
-
-    if(response.status==="success"){
-        const html=['<table style="background-color:white"><tr>']
-        for(const field of response.fields){
-            html.push("<th>")
-            html.push(labels[field])
-            html.push("</th>")
         }
-        if(is_admin){html.push("<th>Action</th>")}
-        html.push("</tr>")
 
-        for(const record of response.records){
-            html.push("<tr>")
-            console.log(record)
+    }else if(params.store){    
+        console.log("at ice_cream_inventory params=store")
+        const response=await post_data(params)
+
+        console.log("response", response)
+        return
+
+        const labels={
+            first_name:"First Name",
+            last_name:"Last Name",
+            email:"Email",
+            phone:"Phone",
+        }
+
+
+        const is_admin=intersect(get_user_data().roles, "administrator").length>0
+
+        if(response.status==="success"){
+            const html=['<table style="background-color:white"><tr>']
             for(const field of response.fields){
-                if(record.fields[field]==="withheld"){
-                  html.push('<td style="color:lightgray">')
-                }else{
-                  html.push("<td>")
-                }
-                html.push(record.fields[field])
-                html.push("</td>")
+                html.push("<th>")
+                html.push(labels[field])
+                html.push("</th>")
             }
-            if(is_admin){
-                html.push("<td>")
-                if(intersect(record.fields.roles, "member").length===0){
-                    html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user', make_member:true},tag('member-list-message'))">Make Member</a>`)
-                }else{
-                    html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user'},tag('member-list-message'))">Update</a>`)
-                }
-                html.push("</td>")
-            }
+            if(is_admin){html.push("<th>Action</th>")}
             html.push("</tr>")
-        }
-        html.push("</table>")
-    
-        tag("member_list_panel").innerHTML=html.join("")
-    
-    }else{
-        tag("member_list_panel").innerHTML="Unable to get member list: " + response.message + "."
-    }    
+
+            for(const record of response.records){
+                html.push("<tr>")
+                console.log(record)
+                for(const field of response.fields){
+                    if(record.fields[field]==="withheld"){
+                    html.push('<td style="color:lightgray">')
+                    }else{
+                    html.push("<td>")
+                    }
+                    html.push(record.fields[field])
+                    html.push("</td>")
+                }
+                if(is_admin){
+                    html.push("<td>")
+                    if(intersect(record.fields.roles, "member").length===0){
+                        html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user', make_member:true},tag('member-list-message'))">Make Member</a>`)
+                    }else{
+                        html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user'},tag('member-list-message'))">Update</a>`)
+                    }
+                    html.push("</td>")
+                }
+                html.push("</tr>")
+            }
+            html.push("</table>")
+        
+            tag("member_list_panel").innerHTML=html.join("")
+        
+        }else{
+            tag("member_list_panel").innerHTML="Unable to get member list: " + response.message + "."
+        } 
+    }  
 
 }
 
