@@ -384,7 +384,7 @@ async function update_user(params,panel){
         if(response.status==="success"){
             message({
                 title:"Success",
-                message:"User updated,",
+                message:"User updated.",
                 seconds:3
             })            
         }else{

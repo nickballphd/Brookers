@@ -1,6 +1,6 @@
 
-//gas project /apps/plant simple/system VISIBLE
-gas_deployment_id='AKfycbxXIh853bSx3uJHGYSiGITopaNLrRVywU187rND69yYtyK4QMSXnm6pS7sqpACr45gywA'
+//gas project /apps/brookers/system 
+gas_deployment_id='AKfycbxQbT-uszRtynO-KLKJ0iCTM0Qq1zeP-t2IPdB7f4tGE5Hbl2H5lGNOqGInGlWYAzr8dg'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
@@ -30,7 +30,7 @@ const authenticated_menu=[
     ]},
     {label:"Logout",function:"logout()", home:"Logout"},
     {label:"Member List",function:"navigate({fn:'email_list'})",roles:["member"]},
-    {label:"Admin Tools",id:"menu2", roles:["administrator"], menu:[
+    {label:"Admin Tools",id:"menu2", roles:["manager","owner"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"}
     ]},
 
