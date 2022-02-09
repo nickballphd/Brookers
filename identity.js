@@ -57,10 +57,14 @@ function navigate(parameters, show_url=true, place_in_browser_history=true){
     //any function called with navigate should build the whole canvas
 
     // if parameters is a string, parse it, otherwise, it's alread an object of parameters
+    console.log('===========================parameters',parameters)
     if(typeof parameters ==="string"){
+
         var params=JSON.parse(parameters)
+
     }else{
         var params=parameters
+        console.log('===============params',params)
     }
     if(place_in_browser_history){
       const url=location.href.split("?")[0] + "?" + json_params_for_url(params)
@@ -81,7 +85,7 @@ function navigate(parameters, show_url=true, place_in_browser_history=true){
         //if params is an empty object, don't send params
         fn()
     }else{
-        fn(params)
+        fn(params.params)
     }
     
 }

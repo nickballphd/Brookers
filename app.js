@@ -1,6 +1,6 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbwWXaNABmKCstULu8-eBweNwy7Qy7BzrN0ZPoQbUb1kA5CYfYPkIofWd0BlAjUgf62iWQ'
+gas_deployment_id='AKfycbyXLA7E-k-NZP8eSbHYq3fgnukDju0iHkqJLweHGd7lHTV8_qPdNcnmXdMabugnrhYGzw'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
@@ -25,7 +25,8 @@ const authenticated_menu=[
         {label:"Personal Data",function:"navigate({fn:'personal_data'})"},
     ]},
     {label:"Logout",function:"logout()", home:"Logout"},
-    {label:"Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory'})"},
+    {label:"Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'update'}})"},
+    {label:"Show Inventory Counts",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["employee","manager","owner"]},
     {label:"Admin Tools",id:"menu2", roles:["manager","owner"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"}
     ]},
@@ -135,12 +136,15 @@ function show_recipes(){
 async function ice_cream_inventory(params){
     console.log("at ice_cream_inventory ")
     hide_menu()
-    if(!params){
+    console.log('params',params)
+    console.log('params',params.params)
+
+    if(params.style){
         tag("canvas").innerHTML=` 
             <div class="page">
                 <div id="inventory-title" style="text-align:center"><h2>Ice Cream Inventory</h2></div>
                 <div id="inventory-message" style="width:100%"></div>
-                <div id="inventory_panel"  style="width:100%"> >
+                <div id="inventory_panel"  style="width:100%">
                 </div>
             </div>  
         `
@@ -154,63 +158,143 @@ async function ice_cream_inventory(params){
                 store:user_data.store[0]
             })
         }else{
-          //add form to select store
-          const html=['<form>Store: <select name="store">']
-          for(store of user_data.store){
-              html.push(`<option value="${store}">${stores[store]}</option>`)
+          if(params.style==='summary'){
+            tag("inventory-message").innerHTML='<i class="fas fa-spinner fa-pulse"></i>'
+            ice_cream_inventory({
+                mode:"get_inventory_list",
+                filter:"list='Ice Cream'",
+                store:user_data.store
+            })
+
+          }else{
+            //add form to select store
+            const html=['<form>Store: <select name="store">']
+            for(store of user_data.store){
+                html.push(`<option value="${store}">${stores[store]}</option>`)
+            }
+            html.push(`</select>
+                        <button type="button" id="choose_store_button" onclick="ice_cream_inventory(form_data(this,true))">Submit</button>
+                        <input type="hidden" name="mode" value="get_inventory_list">
+                        <input type="hidden" name="filter" value="list='Ice Cream'">
+                        </form>`)
+            tag("inventory_panel").innerHTML=html.join("")
           }
-          html.push(`</select>
-                     <button type="button" id="choose_store_button" onclick="ice_cream_inventory(form_data(this,true))">Submit</button>
-                     <input type="hidden" name="mode" value="get_inventory_list">
-                     <input type="hidden" name="filter" value="list='Ice Cream'">
-                     </form>`)
-          tag("inventory_panel").innerHTML=html.join("")
         }
 
     }else if(params.store){    
         console.log("at ice_cream_inventory params=store")
         const response=await post_data(params)
-
+        tag("inventory-message").innerHTML=''
         if(response.status==="success"){
-            console.log("response", response)
-            tag("inventory-title").innerHTML=`<h2>${stores[params.store]} Ice Cream Inventory</h2>`
-            const html=[`
-            <table class="inventory-table">
-                <tr>
-                <th>Flavor</th>
-                `]
-            for(container of response.list.records[0].fields.container){
-                html.push(`<th>${container}</th>`)
-            }     
-            html.push("</tr>")
+            
+            if(response.report_style==='summary'){
+            //this is generating the summary report
 
-            for(record of response.list.records){
-                html.push("<tr>")
-                html.push(`<td>${record.fields.name}</td>`)
-                for(container of record.fields.container){
-                    html.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
+                console.log("response", response)
+                tag("inventory-title").innerHTML=`<h2>Ice Cream Inventory Summary</h2>`
+                const html=[`
+                <table class="inventory-table">
+                    <tr>
+                    <th>Flavor</th>
+                    `]
+                let column_count = 1
+                for(const[key,value] of Object.entries(stores)){
+                    if(key.substr(0,3)==="rec"){
+                        column_count++
+                        html.push(`<th>${value}</th>`)
+                    }
+                }   
+                html.push(`<th>Total</th>`)
+                html.push("</tr>")
+
+
+
+
+                for(record of response.list.records){
+                    html.push("<tr>")
+                    html.push(`<td>${record.fields.name}</td>`)
+                    for(const[key,value] of Object.entries(stores)){
+                        if(key.substr(0,3)==="rec"){
+                            column_count++
+                            html.push(`<td id="${record.id}|${key}"></td>`)
+                        }
+                    }   
+                    html.push(`<td id="${record.id}|total"></td>`)
+                    html.push("</tr>")
+                }     
+
+
+                html.push("</table>")
+                tag("inventory_panel").innerHTML=html.join("")
+
+                // now fill the existing data
+                if(response.data.records){
+                    for(record of response.data.records){
+                        const total_box = tag(record.fields.item[0] + "|total")
+                        console.log(record)
+                        const box = tag(record.fields.item[0] + "|" + record.fields.store[0])
+                        if(box.innerHTML===""){
+                          box.innerHTML=record.fields.quantity
+                        }else{
+                            box.innerHTML=parseFloat(box.innerHTML)+record.fields.quantity
+                        }
+                        if(total_box.innerHTML===""){
+                            total_box.innerHTML=record.fields.quantity
+                        }else{
+                            total_box.innerHTML=parseFloat(total_box.innerHTML)+record.fields.quantity
+                        }
+  
+                    }
+                }
+                
+            }else{
+            //this is generating the form for updating inventory counts in an individual store
+                console.log("response", response)
+                tag("inventory-title").innerHTML=`<h2>${stores[params.store]} Ice Cream Inventory</h2>`
+                const html=[`
+                <table class="inventory-table">
+                    <tr>
+                    <th>Flavor</th>
+                    `]
+                for(container of response.list.records[0].fields.container){
+                    html.push(`<th>${container}</th>`)
                 }     
                 html.push("</tr>")
-            }     
+
+                for(record of response.list.records){
+                    html.push("<tr>")
+                    html.push(`<td>${record.fields.name}</td>`)
+                    for(container of record.fields.container){
+                        html.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
+                    }     
+                    html.push("</tr>")
+                }     
 
 
-            html.push("</table>")
-            tag("inventory_panel").innerHTML=html.join("")
+                html.push("</table>")
+                tag("inventory_panel").innerHTML=html.join("")
 
-            // now fill the existing data
-            if(response.data.records){
-                for(record of response.data.records){
-                    console.log(record)
-                    tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).dataset.obs_id=record.id
-                    tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).value=record.fields.quantity
+                // now fill the existing data
+                if(response.data.records){
+                    for(record of response.data.records){
+                        console.log(record)
+                        tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).dataset.obs_id=record.id
+                        tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).value=record.fields.quantity
+                    }
                 }
-            }
-            
+                
+            } 
         }else{
             tag("inventory_panel").innerHTML="Unable to get inventory list: " + response.message + "."
-        } 
+        }
+
     }  
 }
+
+
+
+
+
 async function update_inventory_item(entry){
     console.log(entry.dataset.item_id, entry.value)
 

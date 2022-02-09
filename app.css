@@ -82,6 +82,7 @@ h1 {
     margin:1px;
     padding: 4px 8px 4px 8px;
     white-space: nowrap;
+    text-align: right;
 }
 
 .inventory-table input {
