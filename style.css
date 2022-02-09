@@ -35,12 +35,11 @@ h1 {
     text-align: left;
 }
 
-.white-box{
-    background-color: rgba(255,255,255,0.9);
+.page{
+    background-color: khaki;
     display:inline-block;
     padding:1rem;
     text-align: left;
-    font-size: 14px;
 }
 
 #welcome p{
@@ -65,3 +64,30 @@ h1 {
 .tools:hover{
     color:green;
 }
+
+.inventory-table{
+    background-color: lightgrey;
+
+}
+
+.inventory-table th {
+    color: maroon;
+    background-color: white;
+    margin:1px;
+    padding: 4px 8px 4px 8px;
+}
+.inventory-table td {
+    color: black;
+    background-color: white;
+    margin:1px;
+    padding: 4px 8px 4px 8px;
+    white-space: nowrap;
+}
+
+.inventory-table input {
+    width:100%;
+    border:none;
+    text-align: right;
+    background-color: transparent;
+}
+

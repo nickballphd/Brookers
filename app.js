@@ -1,6 +1,6 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbxyyKDnGFO0T0R3qxJZO8XqkZeAMbDKSpFcwGggDMm93kwPNjHmbZsEXyirngXubqaYxQ'
+gas_deployment_id='AKfycbwWXaNABmKCstULu8-eBweNwy7Qy7BzrN0ZPoQbUb1kA5CYfYPkIofWd0BlAjUgf62iWQ'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
@@ -137,11 +137,12 @@ async function ice_cream_inventory(params){
     hide_menu()
     if(!params){
         tag("canvas").innerHTML=` 
-            <div style="text-align:center"><h2>Ice Cream Inventory</h2></div>
-            <div id="inventory_panel">
-            <div id="inventory-message"></div>
-            
-            </div>
+            <div class="page">
+                <div id="inventory-title" style="text-align:center"><h2>Ice Cream Inventory</h2></div>
+                <div id="inventory-message" style="width:100%"></div>
+                <div id="inventory_panel"  style="width:100%"> >
+                </div>
+            </div>  
         `
         const user_data = get_user_data()
         console.log ("user_data",user_data)
@@ -154,70 +155,126 @@ async function ice_cream_inventory(params){
             })
         }else{
           //add form to select store
-
+          const html=['<form>Store: <select name="store">']
+          for(store of user_data.store){
+              html.push(`<option value="${store}">${stores[store]}</option>`)
+          }
+          html.push(`</select>
+                     <button type="button" id="choose_store_button" onclick="ice_cream_inventory(form_data(this,true))">Submit</button>
+                     <input type="hidden" name="mode" value="get_inventory_list">
+                     <input type="hidden" name="filter" value="list='Ice Cream'">
+                     </form>`)
+          tag("inventory_panel").innerHTML=html.join("")
         }
 
     }else if(params.store){    
         console.log("at ice_cream_inventory params=store")
         const response=await post_data(params)
 
-        console.log("response", response)
-        return
-
-        const labels={
-            first_name:"First Name",
-            last_name:"Last Name",
-            email:"Email",
-            phone:"Phone",
-        }
-
-
-        const is_admin=intersect(get_user_data().roles, "administrator").length>0
-
         if(response.status==="success"){
-            const html=['<table style="background-color:white"><tr>']
-            for(const field of response.fields){
-                html.push("<th>")
-                html.push(labels[field])
-                html.push("</th>")
-            }
-            if(is_admin){html.push("<th>Action</th>")}
+            console.log("response", response)
+            tag("inventory-title").innerHTML=`<h2>${stores[params.store]} Ice Cream Inventory</h2>`
+            const html=[`
+            <table class="inventory-table">
+                <tr>
+                <th>Flavor</th>
+                `]
+            for(container of response.list.records[0].fields.container){
+                html.push(`<th>${container}</th>`)
+            }     
             html.push("</tr>")
 
-            for(const record of response.records){
+            for(record of response.list.records){
                 html.push("<tr>")
-                console.log(record)
-                for(const field of response.fields){
-                    if(record.fields[field]==="withheld"){
-                    html.push('<td style="color:lightgray">')
-                    }else{
-                    html.push("<td>")
-                    }
-                    html.push(record.fields[field])
-                    html.push("</td>")
-                }
-                if(is_admin){
-                    html.push("<td>")
-                    if(intersect(record.fields.roles, "member").length===0){
-                        html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user', make_member:true},tag('member-list-message'))">Make Member</a>`)
-                    }else{
-                        html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user'},tag('member-list-message'))">Update</a>`)
-                    }
-                    html.push("</td>")
-                }
+                html.push(`<td>${record.fields.name}</td>`)
+                for(container of record.fields.container){
+                    html.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
+                }     
                 html.push("</tr>")
-            }
+            }     
+
+
             html.push("</table>")
-        
-            tag("member_list_panel").innerHTML=html.join("")
-        
+            tag("inventory_panel").innerHTML=html.join("")
+
+            // now fill the existing data
+            if(response.data.records){
+                for(record of response.data.records){
+                    console.log(record)
+                    tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).dataset.obs_id=record.id
+                    tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).value=record.fields.quantity
+                }
+            }
+            
         }else{
-            tag("member_list_panel").innerHTML="Unable to get member list: " + response.message + "."
+            tag("inventory_panel").innerHTML="Unable to get inventory list: " + response.message + "."
         } 
     }  
-
 }
+async function update_inventory_item(entry){
+    console.log(entry.dataset.item_id, entry.value)
 
+    // add data validation
+    if(isNaN(entry.value)){
+        message({
+            message:"Please enter a number",
+            title:"Data Error",
+            kind:"error",
+            seconds:5    
+        })
+        entry.focus()
+        entry.select()
+
+        return
+    }
+
+    const params={
+        item_id:entry.dataset.item_id,
+        quantity:entry.value,
+        container:entry.dataset.container,
+        store:entry.dataset.store,
+    }
+    entry.parentElement.style.backgroundColor="lightGray"
+    if(entry.dataset.obs_id){
+        // there is already a record for this item.  update it
+        params.mode="update_inventory_count"
+        params.obs_id=entry.dataset.obs_id
+        console.log("updating", params.obs_id)
+        const response=await post_data(params)    
+        console.log("update response", response)
+        if(response.status==="success"){
+            entry.parentElement.style.backgroundColor="white"
+            entry.dataset.obs_id=response.records[0].id
+        }else{
+            entry.style.backgroundColor="red"
+            message({
+                message:"Inventory Not Recorded: " + response.message,
+                title:"Data Error",
+                kind:"error",
+                seconds:5    
+            })
+        }
+
+    }else{
+        // there is no record for this item, insert it
+        params.mode="insert_inventory_count"
+        console.log("inserting")
+        const response=await post_data(params)    
+        console.log("insert response", response)
+        if(response.status==="success"){
+            entry.parentElement.style.backgroundColor="white"
+            entry.dataset.obs_id=response.records[0].id
+        }else{
+            entry.style.backgroundColor="red"
+            message({
+                message:"Inventory Not Recorded: " + response.message,
+                title:"Data Error",
+                kind:"error",
+                seconds:5    
+            })
+            }
+    }
+}
 
 
 async function expense_list(){
