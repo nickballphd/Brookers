@@ -1,6 +1,6 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbwWXaNABmKCstULu8-eBweNwy7Qy7BzrN0ZPoQbUb1kA5CYfYPkIofWd0BlAjUgf62iWQ'
+gas_deployment_id='AKfycbzF6yGFXrdB-8umd4PBCny8dK9H0VNanKDxlysG8g8q1Xn8_8X27Ta1BonHAw-0EdsvaQ'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
