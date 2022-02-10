@@ -509,6 +509,8 @@ function message(params){
         if(params.title==="Message"){
             params.title="Error"
         }
+    }else if(params.kind==="info"){
+        message_class += " info"
     }
     const msg=document.createElement("div")
     msg.className="message"

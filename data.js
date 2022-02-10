@@ -1,5 +1,11 @@
 // This is for really stable data so we don't have to ask for it every time
 
+store_sequence=[
+    "Vineyard",
+    "Herriman",
+    "Provo"
+]
+
 stores={
     reciLXPTeT7X6BpfX:"Herriman",
     recAWRtheFL9hjYa9:"Provo",

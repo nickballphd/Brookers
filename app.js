@@ -1,6 +1,6 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbyXLA7E-k-NZP8eSbHYq3fgnukDju0iHkqJLweHGd7lHTV8_qPdNcnmXdMabugnrhYGzw'
+gas_deployment_id='AKfycbzemWA84-XNjy2meXYsN_AqoK-ftn5CWK9qraIXZcSLenPZY0O1X4WVOUnSc3ZSx3U'
 const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
 
 //plant simple provo
@@ -25,10 +25,11 @@ const authenticated_menu=[
         {label:"Personal Data",function:"navigate({fn:'personal_data'})"},
     ]},
     {label:"Logout",function:"logout()", home:"Logout"},
-    {label:"Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'update'}})"},
-    {label:"Show Inventory Counts",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["employee","manager","owner"]},
+    {label:"Enter Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'update'}})"},
+    {label:"Ice Cream Inventory Summary",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["employee","manager","owner"]},
     {label:"Admin Tools",id:"menu2", roles:["manager","owner"], menu:[
-        {label:"Update User",function:"update_user()",panel:"update_user"}
+        {label:"Update User",function:"update_user()",panel:"update_user"},
+        {label:"Archive Inventory",function:"navigate({fn:'archive_inventory'})"},
     ]},
 
 ]
@@ -133,6 +134,37 @@ function show_recipes(){
     window.open("/index.html", '_blank');
 }
 
+
+async function archive_inventory(){
+    console.log("at archive")
+    hide_menu()
+    const msgbox =  message({
+            message:"This may take a couple of minutes.",
+            title:"Hang in there...",
+            kind:"info"
+        })
+    const params={mode:"archive_inventory"}
+    const response=await post_data(params)
+    msgbox.remove()
+    if(response.status==="success"){
+        message({
+            message:response.message,
+            title:"Success",
+            seconds:3
+        })
+    }else{
+        message({
+            message:response.message,
+            title:"Data Error",
+            kind:"error",
+            seconds:8    
+        })
+
+    }
+    
+}
+
+
 async function ice_cream_inventory(params){
     console.log("at ice_cream_inventory ")
     hide_menu()
@@ -185,6 +217,10 @@ async function ice_cream_inventory(params){
         console.log("at ice_cream_inventory params=store")
         const response=await post_data(params)
         tag("inventory-message").innerHTML=''
+
+
+
+
         if(response.status==="success"){
             
             if(response.report_style==='summary'){
@@ -192,56 +228,71 @@ async function ice_cream_inventory(params){
 
                 console.log("response", response)
                 tag("inventory-title").innerHTML=`<h2>Ice Cream Inventory Summary</h2>`
-                const html=[`
+
+
+
+                const header=[`
                 <table class="inventory-table">
                     <tr>
                     <th>Flavor</th>
                     `]
-                let column_count = 1
-                for(const[key,value] of Object.entries(stores)){
-                    if(key.substr(0,3)==="rec"){
-                        column_count++
-                        html.push(`<th>${value}</th>`)
-                    }
+                for(const store of store_sequence){
+                    header.push(`<th>${store}</th>`)
+
                 }   
-                html.push(`<th>Total</th>`)
-                html.push("</tr>")
 
+                header.push(`<th>Total</th>`)
+                header.push("</tr>")
+                const html=[header.join("")]
 
-
-
+                irregular=[]// icecream not in regular category
                 for(record of response.list.records){
-                    html.push("<tr>")
-                    html.push(`<td>${record.fields.name}</td>`)
-                    for(const[key,value] of Object.entries(stores)){
-                        if(key.substr(0,3)==="rec"){
-                            column_count++
-                            html.push(`<td id="${record.id}|${key}"></td>`)
-                        }
-                    }   
-                    html.push(`<td id="${record.id}|total"></td>`)
-                    html.push("</tr>")
+                    let target=html
+                    if(record.fields.category!=="Regular"){
+                        target=irregular
+                    }
+                    target.push("<tr>")
+                    target.push(`<td style="text-align:left">${record.fields.name}</td>`)
+                    for(store of store_sequence){
+                        target.push(`<td id="${record.id}|${stores[store]}"></td>`)
+                    }
+                    target.push(`<td id="${record.id}|total"></td>`)
+                    target.push("</tr>")
                 }     
 
-
+                html.push("</table><br>")
+                html.push(header.join(""))
+                html.push(irregular.join(""))
                 html.push("</table>")
                 tag("inventory_panel").innerHTML=html.join("")
 
-                // now fill the existing data
+
+                // find the most recent numbers for each store
+                const data={}
                 if(response.data.records){
                     for(record of response.data.records){
-                        const total_box = tag(record.fields.item[0] + "|total")
-                        console.log(record)
-                        const box = tag(record.fields.item[0] + "|" + record.fields.store[0])
+                        const id = record.fields.item[0] + "|" + record.fields.store[0]
+                        if(!data[id]){
+                            data[id]={quantity:record.fields.quantity,date:record.fields.date}
+                        }
+                    }
+                    console.log("=========================data=================================")
+                    console.log(data)
+                    console.log("===========================================================")
+    
+                    // now fill the existing data
+                    for(const[key,value] of Object.entries(data)){
+                        const total_box = tag(key.split("|")[0] + "|total")
+                        const box = tag(key)
                         if(box.innerHTML===""){
-                          box.innerHTML=record.fields.quantity
+                            box.innerHTML=value.quantity
                         }else{
-                            box.innerHTML=parseFloat(box.innerHTML)+record.fields.quantity
+                            box.innerHTML=parseFloat(box.innerHTML)+value.quantity
                         }
                         if(total_box.innerHTML===""){
-                            total_box.innerHTML=record.fields.quantity
+                            total_box.innerHTML=value.quantity
                         }else{
-                            total_box.innerHTML=parseFloat(total_box.innerHTML)+record.fields.quantity
+                            total_box.innerHTML=parseFloat(total_box.innerHTML)+value.quantity
                         }
   
                     }
@@ -249,28 +300,48 @@ async function ice_cream_inventory(params){
                 
             }else{
             //this is generating the form for updating inventory counts in an individual store
+                // keep track of navigation
+                window.rows={}
+                window.cols={}
                 console.log("response", response)
                 tag("inventory-title").innerHTML=`<h2>${stores[params.store]} Ice Cream Inventory</h2>`
-                const html=[`
+                const html=["Fill in every row in this section."]
+                const header=[`
                 <table class="inventory-table">
                     <tr>
                     <th>Flavor</th>
                     `]
+                let p=1 // map store ids to column numbers.  only needed for this loop then can be reused
                 for(container of response.list.records[0].fields.container){
-                    html.push(`<th>${container}</th>`)
+                    header.push(`<th>${container}</th>`)
+                    window.cols[p]=container
+                    window.cols[container]=p++
                 }     
-                html.push("</tr>")
+                header.push("</tr>")
+                html.push(header.join(""))
+                irregular=[]// icecreame not in regular category
 
+                p=1// for keeping track of navigating rows.  can be reused after this loop
                 for(record of response.list.records){
-                    html.push("<tr>")
-                    html.push(`<td>${record.fields.name}</td>`)
+                    // object to allow the navigation from row to row
+                    window.rows[p]=record.id
+                    window.rows[record.id]=p++
+
+                    let target=html
+                    if(record.fields.category!=="Regular"){
+                        target=irregular
+                    }
+                    target.push("<tr>")
+                    target.push(`<td>${record.fields.name}</td>`)
                     for(container of record.fields.container){
-                        html.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
+                        target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
                     }     
-                    html.push("</tr>")
+                    target.push("</tr>")
                 }     
-
-
+                html.push("</table>")
+                html.push("<br>In this section, fill in only the rows corresponding to flavors you have on hand.")
+                html.push(header.join(""))
+                html.push(irregular.join(""))
                 html.push("</table>")
                 tag("inventory_panel").innerHTML=html.join("")
 
@@ -282,6 +353,13 @@ async function ice_cream_inventory(params){
                         tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).value=record.fields.quantity
                     }
                 }
+
+                tag("inventory_panel").addEventListener("keyup", function(event) {
+                    if (event.keyCode === 13) {
+                      move_down(event.target);
+                    }
+                });                
+
                 
             } 
         }else{
@@ -289,10 +367,26 @@ async function ice_cream_inventory(params){
         }
 
     }  
+
 }
 
 
-
+function move_down(source){
+    // selects the next cell below
+    const ids=source.id.split("|")
+    ids[1]=ids[1].replace(/_/g," ")
+    
+    let next_flavor=window.rows[window.rows[ids[0]]+1]
+    let next_container=ids[1]
+    if(!next_flavor){
+        next_flavor=window.rows[1]
+        next_container = window.cols[window.cols[next_container]+1]
+        if(!next_container){
+            next_container=window.cols[1]
+        }
+    }
+    tag(next_flavor + "|" + next_container.replace(/\s/g,"_")).focus()
+}
 
 
 async function update_inventory_item(entry){
@@ -351,7 +445,7 @@ async function update_inventory_item(entry){
         }else{
             entry.style.backgroundColor="red"
             message({
-                message:"Inventory Not Recorded: " + response.message,
+                message:"Inventory Not Recorded: " + response.message.message,
                 title:"Data Error",
                 kind:"error",
                 seconds:5    
