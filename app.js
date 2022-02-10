@@ -390,10 +390,11 @@ function move_down(source){
 
 
 async function update_inventory_item(entry){
-    console.log(entry.dataset.item_id, entry.value)
+    //console.log(entry.parentElement)
 
     // add data validation
     if(isNaN(entry.value)){
+        entry.parentElement.style.backgroundColor="lightGray"
         message({
             message:"Please enter a number",
             title:"Data Error",
@@ -412,7 +413,9 @@ async function update_inventory_item(entry){
         container:entry.dataset.container,
         store:entry.dataset.store,
     }
-    entry.parentElement.style.backgroundColor="lightGray"
+    entry.parentElement.style.backgroundColor=null
+    entry.parentElement.className="working"
+    
     if(entry.dataset.obs_id){
         // there is already a record for this item.  update it
         params.mode="update_inventory_count"
@@ -421,7 +424,8 @@ async function update_inventory_item(entry){
         const response=await post_data(params)    
         console.log("update response", response)
         if(response.status==="success"){
-            entry.parentElement.style.backgroundColor="white"
+            entry.parentElement.className=null
+            //entry.parentElement.style.backgroundColor="white"
             entry.dataset.obs_id=response.records[0].id
         }else{
             entry.style.backgroundColor="red"

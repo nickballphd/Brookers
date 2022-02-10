@@ -53,7 +53,7 @@ h1 {
     color:black; 
     padding:4px;
     margin:0;
-    font-size: 1.2rem;
+    /*font-size: 1.2rem;*/
 }
 
 .tools{
@@ -83,7 +83,16 @@ h1 {
     padding: 4px 8px 4px 8px;
     white-space: nowrap;
     text-align: right;
+
 }
+
+.working{
+    background-image: url(images/progresswheel.gif);
+    background-position: left;
+    background-size: 20px;
+    background-repeat: no-repeat;
+}
+
 
 .inventory-table input {
     width:100%;
