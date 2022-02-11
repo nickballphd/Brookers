@@ -332,7 +332,7 @@ async function ice_cream_inventory(params){
                         target=irregular
                     }
                     target.push("<tr>")
-                    target.push(`<td>${record.fields.name}</td>`)
+                    target.push(`<th>${record.fields.name}</th>`)
                     for(container of record.fields.container){
                         target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
                     }     
