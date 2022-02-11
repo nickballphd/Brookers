@@ -424,6 +424,7 @@ async function update_inventory_item(entry){
         const response=await post_data(params)    
         console.log("update response", response)
         if(response.status==="success"){
+
             entry.parentElement.className=null
             //entry.parentElement.style.backgroundColor="white"
             entry.dataset.obs_id=response.records[0].id
@@ -444,7 +445,7 @@ async function update_inventory_item(entry){
         const response=await post_data(params)    
         console.log("insert response", response)
         if(response.status==="success"){
-            entry.parentElement.style.backgroundColor="white"
+            entry.parentElement.className=null
             entry.dataset.obs_id=response.records[0].id
         }else{
             entry.style.backgroundColor="red"
