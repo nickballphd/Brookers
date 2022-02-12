@@ -1,11 +1,12 @@
 
 //gas project /apps/brookers/system 
-gas_deployment_id='AKfycbyckZb6M3FNpoVamuo3RJXoAXQnFmpM_0HLmd-Fq2EHTad6kWDZbxvRJ-IXTTiOyk0PqQ'
-const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id+'/exec'
+const gas_end_point = 'https://script.google.com/macros/s/'+gas_deployment_id()+'/exec'
 
 //plant simple provo
 const nav_menu=[
     {label:"Home",function:"navigate({fn:'show_home'})"},
+    {label:"Locations",function:"navigate({fn:'show_locations'})"},
+    
 ]
 
 
@@ -13,7 +14,6 @@ const unauthenticated_menu=[
     {menu:nav_menu},
     {},
     {label:"Login",function:"login()",home:"Login",panel:"login_panel"},
-    
     {label:"Recover Password",function:"recover_password()",panel:"recover"}, 
 ]
 //{label:get_user_name()},
@@ -25,9 +25,15 @@ const authenticated_menu=[
         {label:"Personal Data",function:"navigate({fn:'personal_data'})"},
     ]},
     {label:"Logout",function:"logout()", home:"Logout"},
+    {label:"Time Off",id:"menu1",menu:[
+        {label:"Request Time Off",function:"navigate({fn:'request_time_off'})"}, 
+        {label:"My Requests",function:"navigate({fn:'show_time_off'})"}, 
+    ]},
+    {label:"Add Employee",function:"navigate({fn:'create_account'})", roles:["manager","owner","administrator"]}, 
     {label:"Enter Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'update'}})"},
-    {label:"Ice Cream Inventory Summary",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["employee","manager","owner"]},
-    {label:"Admin Tools",id:"menu2", roles:["manager","owner"], menu:[
+    {label:"Employee List",function:"navigate({fn:'employee_list'})"},
+    {label:"Ice Cream Inventory Summary",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["owner"]},
+    {label:"Admin Tools",id:"menu2", roles:["manager","owner","administrator"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"},
         {label:"Archive Inventory",function:"navigate({fn:'archive_inventory'})"},
     ]},
@@ -53,7 +59,7 @@ function show_home(){
     <div class="center-screen">
     
     <p><img height="${window.innerHeight * .6}" src="https://www.brookersicecream.com/wp-content/uploads/2018/08/brookers-logo-final-large.png"></p>
-    <div style="text-align:center"><p>${menu.join(" | ")}</p></div>
+    <div style="text-align:center"></div>
     
     
     </div>
@@ -68,71 +74,35 @@ function get_user_name(){
     return data.first_name + " " + data.last_name
 }
 
-async function show_schedule(){
-    let airtable_object_id="shrxZ1H56Kh3Jds3e"
-    let width = 670
-
-    if(intersect(get_user_data().roles, "user").length>0){
-        const response=await post_data({
-            mode:"get_airtable_object_id",
-            name:"schedule"
-        })
-        if(response.status==='success'){
-            airtable_object_id=response.data
-            width=850
-        }else{
-            console.log(response)
-        }
-    }
+async function show_locations(){
+    const airtable_object_id="shrwz1d1aExJUIbUo"
+    const width = 400
     tag("canvas").innerHTML=`<div class="center-screen"><iframe class="airtable-embed" src="https://airtable.com/embed/${airtable_object_id}?backgroundColor=cyan" frameborder="0" onmousewheel="" width="${width}" height="500" style="background-color: white; border: 1px solid #ccc;"></iframe></div>`
-   
     hide_menu()
 }
 
-async function show_topics(){
-    let width = 670
-    const response=await post_data({
-        mode:"get_airtable_object_id",
-        name:"list_topics"
-    })
-    if(response.status==='success'){
-        var airtable_object_id=response.data
-    }else{
-        console.log(response)
-    }
-
-    tag("canvas").innerHTML=`<div class="center-screen"><iframe class="airtable-embed" src="https://airtable.com/embed/${airtable_object_id}?backgroundColor=cyan" frameborder="0" onmousewheel="" width="${width}" height="500" style="background-color: white; border: 1px solid #ccc;"></iframe></div>`
-   
+async function request_time_off(){
+    if(!logged_in()){show_home();return}
+    const airtable_object_id="shra7pqsxDNQzkh15"
+    const width = 300
+    const url=`https://airtable.com/embed/${airtable_object_id}?prefill_employee=${get_user_data().id}`
+    console.log("url",url, get_user_data())
+    tag("canvas").innerHTML=`<div class="center-screen"><iframe class="airtable-embed" src="${url}" frameborder="0" onmousewheel="" width="${width}" height="500" style="background-color: white; border: 1px solid #ccc;"></iframe></div>`
     hide_menu()
 }
 
-
-async function add_topics(){
-    let width = 400
-    const response=await post_data({
-        mode:"get_airtable_object_id",
-        name:"add_topics"
-    })
-    if(response.status==='success'){
-        var airtable_object_id=response.data
-    }else{
-        message({
-            message:"Topic not added: " + response.message,
-            title:"Server Error",
-            kind:"error",
-            seconds:5    
-        })
-    }
-
-    tag("canvas").innerHTML=`<div class="center-screen"><iframe class="airtable-embed" src="https://airtable.com/embed/${airtable_object_id}?backgroundColor=cyan" frameborder="0" onmousewheel="" width="${width}" height="${window.innerHeight*.9}" style="background-color: white; border: 1px solid #ccc;"></iframe></div>`
-   
+async function show_time_off(){
+    if(!logged_in()){show_home();return}
+    const airtable_object_id="shroqlDqLdgd406A0"
+    const width = 300
+    const user_data = get_user_data()
+    const url=`https://airtable.com/embed/${airtable_object_id}?filter_employee=${user_data.first_name}+${user_data.last_name}`
+    console.log("url",url, get_user_data())
+    tag("canvas").innerHTML=`<div class="center-screen"><iframe class="airtable-embed" src="${url}" frameborder="0" onmousewheel="" width="${width}" height="500" style="background-color: white; border: 1px solid #ccc;"></iframe></div>`
     hide_menu()
 }
 
 
-function show_recipes(){
-    window.open("/index.html", '_blank');
-}
 
 
 async function archive_inventory(){
@@ -166,7 +136,8 @@ async function archive_inventory(){
 
 
 async function ice_cream_inventory(params){
-    console.log("at ice_cream_inventory ")
+    if(!logged_in()){show_home();return}//in case followed a link after logging out
+
     hide_menu()
     console.log('params',params)
     console.log('params',params.params)
@@ -334,7 +305,7 @@ async function ice_cream_inventory(params){
                     target.push("<tr>")
                     target.push(`<th>${record.fields.name}</th>`)
                     for(container of record.fields.container){
-                        target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_inventory_item(this)"></td>`)
+                        target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
                     }     
                     target.push("</tr>")
                 }     
@@ -345,12 +316,42 @@ async function ice_cream_inventory(params){
                 html.push("</table>")
                 tag("inventory_panel").innerHTML=html.join("")
 
+                // add quick buttons
+                for(const [key,row] of Object.entries(window.rows)){
+                    if(isNaN(row)){
+                        for(const [key,col] of Object.entries(window.cols)){
+                            if(isNaN(col)){
+                                add_buttons(row,col)
+                            }
+                        }
+                    }
+                }
+
+                const val_map={
+                    "0":0  ,
+                    "1":1  ,
+                    "2":2  ,
+                    "3":3  ,
+                    "4":4  ,
+                    "¼":.25,
+                    "½":.5 ,
+                    "¾":.75
+                }
+
                 // now fill the existing data
                 if(response.data.records){
                     for(record of response.data.records){
-                        console.log(record)
-                        tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).dataset.obs_id=record.id
-                        tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_")).value=record.fields.quantity
+                        const box=tag(record.fields.item[0] + "|" + record.fields.container.replace(/\s/g,"_"))
+                        box.dataset.obs_id=record.id
+                        box.value=record.fields.quantity
+                        for(const div of getAllSiblings(box)){
+                            console.log(div.tagName,div.innerHTML,record.fields.quantity,val_map[div.innerHTML],record.fields.quantity===val_map[div.innerHTML])
+                            if(div.tagName==="DIV" && record.fields.quantity===val_map[div.innerHTML]){
+                                div.style.backgroundColor="lightGrey"
+                                div.style.color="black"
+                            }
+                        }
+                        box.parentElement.style.backgroundColor="lightYellow"
                     }
                 }
 
@@ -359,6 +360,9 @@ async function ice_cream_inventory(params){
                       move_down(event.target);
                     }
                 });                
+
+
+                
 
                 
             } 
@@ -369,7 +373,73 @@ async function ice_cream_inventory(params){
     }  
 
 }
+function add_buttons(row,col){
+    const box = tag(row + "|" + col.replace(/\s/g,"_"))    
+    const container = box.parentElement
+    switch(window.cols[col]){
+        case 3:
+            box.style.display="none"
+            container.appendChild(get_div_button(box,"20%",0,"0"))
+            container.appendChild(get_div_button(box,"20%",.25,"&#188;"))
+            container.appendChild(get_div_button(box,"20%",.5,"&#189;"))
+            container.appendChild(get_div_button(box,"20%",.75,"&#190;"))
+            container.appendChild(get_div_button(box,"20%",1,"1"))
+            break;
+        case 2:
+            box.style.width="30px"
+            container.prepend(get_div_button(box,"15%",2))
+            container.prepend(get_div_button(box,"15%",1))
+            container.prepend(get_div_button(box,"15%",0))
+            break
+        case 1:
+            box.style.width="30px"
+            container.prepend(get_div_button(box,"15%",4))
+            container.prepend(get_div_button(box,"15%",3))
+            container.prepend(get_div_button(box,"15%",2))
+            container.prepend(get_div_button(box,"15%",1))
+            container.prepend(get_div_button(box,"15%",0))
+            break
+        }
+}
 
+function get_div_button(box,width,value,label){
+    if(label===undefined)(label=value)
+    const div=document.createElement('div')
+    div.addEventListener("click",async function(event){
+        box.value=value
+        if(await update_observation(box)){
+            for(const div of getAllSiblings(this)){
+                if(div.tagName==="DIV"){
+                    div.style.backgroundColor="transparent"
+                    div.style.color="lightGray"
+                    console.log(div)
+                }
+            }
+            this.style.backgroundColor="lightGray"
+            this.style.color="black"
+        }
+    })
+    div.style.height="100%"
+    div.style.display="inline-block"
+    div.style.width=width
+    div.style.textAlign="center"
+    div.style.borderRadius="50%"
+    div.style.color="lightgrey"
+    div.innerHTML=label
+    
+    return div
+}
+
+function getAllSiblings(elem, filter) {
+    var sibs = [];
+    elem = elem.parentNode.firstChild;
+    do {
+        //if (elem.nodeType === 3) continue; // text node
+        //if (!filter || filter(elem))
+        sibs.push(elem);
+    } while (elem = elem.nextSibling)
+    return sibs;
+}
 
 function move_down(source){
     // selects the next cell below
@@ -389,7 +459,7 @@ function move_down(source){
 }
 
 
-async function update_inventory_item(entry){
+async function update_observation(entry){
     //console.log(entry.parentElement)
 
     // add data validation
@@ -426,8 +496,9 @@ async function update_inventory_item(entry){
         if(response.status==="success"){
 
             entry.parentElement.className=null
-            //entry.parentElement.style.backgroundColor="white"
+            entry.parentElement.style.backgroundColor="lightYellow"
             entry.dataset.obs_id=response.records[0].id
+            return true
         }else{
             entry.style.backgroundColor="red"
             message({
@@ -436,6 +507,7 @@ async function update_inventory_item(entry){
                 kind:"error",
                 seconds:5    
             })
+            return false
         }
 
     }else{
@@ -446,7 +518,9 @@ async function update_inventory_item(entry){
         console.log("insert response", response)
         if(response.status==="success"){
             entry.parentElement.className=null
+            entry.parentElement.style.backgroundColor="lightYellow"
             entry.dataset.obs_id=response.records[0].id
+            return true
         }else{
             entry.style.backgroundColor="red"
             message({
@@ -456,43 +530,76 @@ async function update_inventory_item(entry){
                 seconds:5    
             })
             }
+            return false
     }
 }
 
 
-async function expense_list(){
+async function employee_list(){
+    if(!logged_in()){show_home();return}//in case followed a link after logging out
+    hide_menu()
+    tag("canvas").innerHTML=` 
+    <div class="page">
+        <h2>Employee List</h2>
+        <div id="member-list-message" style="padding-top:1rem;margin-bottom:1rem">
+        Employee information is private and should not be shared.
+        </div>
+        <div id="employee_list_panel">
+        <i class="fas fa-spinner fa-pulse"></i>
+        </div>
+    </div>
+    `
     const response=await post_data({
-        mode:"expense_list",
+        mode:"employee_list",
         filter:""
     })
 
-    const columns=["expense_description","expense_date", "cost"]
-    const html=["<table><tr>"]
-    for(const field of response.fields){
-        html.push("<th>")
-        html.push(field)
-        html.push("</th>")
+    const labels={
+        first_name:"First Name",
+        last_name:"Last Name",
+        email:"Email",
+        phone:"Phone",
     }
 
-    for(const record of response.records){
-        html.push("<tr>")
-        console.log(record)
-        for(const field of columns){
-            html.push("<td>")
-            html.push(record.fields[field])
-            html.push("</td>")
+
+    const is_admin=intersect(get_user_data().roles, ["administrator","owner","manager"]).length>0
+
+    if(response.status==="success"){
+        const html=['<table style="background-color:white"><tr>']
+        for(const field of response.fields){
+            html.push("<th>")
+            html.push(labels[field])
+            html.push("</th>")
         }
-        html.push(`<td><a target="_blank" href="${record.fields.receipt_image[0].url}">`)
-        html.push(`<img src="${record.fields.receipt_image[0].thumbnails.small.url}">`)
-//        html.push(record.fields[field])
-        html.push("</td>")
-
+        if(is_admin){html.push("<th>Action</th>")}
         html.push("</tr>")
-    }
-    html.push("</table>")
 
-    tag("canvas").innerHTML=html.join("")
-    hide_menu()
+        for(const record of response.records){
+            html.push("<tr>")
+            console.log(record)
+            for(const field of response.fields){
+                if(record.fields[field]==="withheld"){
+                  html.push('<td style="color:lightgray">')
+                }else{
+                  html.push("<td>")
+                }
+                html.push(record.fields[field])
+                html.push("</td>")
+            }
+            if(is_admin){
+                html.push("<td>")
+                    html.push(`<a class="tools" onclick="update_user({email:'${record.fields.email}', button:'Update User', mode:'update_user'},tag('member-list-message'))">Update</a>`)
+                html.push("</td>")
+            }
+            html.push("</tr>")
+        }
+        html.push("</table>")
+    
+        tag("employee_list_panel").innerHTML=html.join("")
+    
+    }else{
+        tag("employee_list_panel").innerHTML="Unable to get member list: " + response.message + "."
+    }    
+
 }
-
 

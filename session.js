@@ -85,29 +85,28 @@ async function logout(){
   erase_cookie("auth")
   erase_cookie("data")
   build_menu(unauthenticated_menu)
-  show_home()
+  navigate({fn:"show_home"})
 }
 
 async function personal_data(params){
+    if(!logged_in()){show_home();return}
     console.log("at personal data", params)
     hide_menu()
     
     if(!params){ //no params sent.  Need to build the form container
         tag("canvas").innerHTML=` 
-        <div class="center-screen">
-            <div class="white-box">
-                <h2>Modify Data</h2>
+        <div class="page">
+                        <h2>Modify Data</h2>
                 <div id="personal-data-message" style="width:170px;padding-top:1rem;margin-bottom:1rem">
                 <i class="fas fa-spinner fa-pulse"></i> Getting your data.
                 </div>
                 <div id="personal_data_panel"></div>
-            </div>
         </div>
         `
         const panel=tag("personal_data_panel")
       
         response = await post_data({  // getting the member data
-            mode:"get_member_data"
+            mode:"get_user_data"
         })
 
         if(response.status==="success"){
@@ -116,18 +115,18 @@ async function personal_data(params){
             console.log("response",response)
             panel.innerHTML=`
                 <form>
-                    <input placeholder="First Name" name="first_name" id="1235" value="${response.data.fields.first_name}"><br>
-                    <input placeholder="Last Name" name="last_name" value="${response.data.fields.last_name}"><br>
-                    <input placeholder="Email Address" name="email" value="${response.data.fields.email}"><br>
-                    <input placeholder="Phone Number" name="phone" value="${response.data.fields.phone}"><br>
-                    Other members can see ...<br>
+                    <input placeholder="First Name" name="first_name" id="1235" value="${response.data.fields.first_name || ""}"><br>
+                    <input placeholder="Last Name" name="last_name" value="${response.data.fields.last_name || ""}"><br>
+                    <input placeholder="Email Address" name="email" value="${response.data.fields.email || ""}"><br>
+                    <input placeholder="Phone Number" name="phone" value="${response.data.fields.phone || ""}"><br>
+                    Other employes can see ...<br>
                     <select name="visibility">
                         <option value="show-all" ${response.data.fields.visibility==="show-all" ?"selected":""}>my phone and email</option>
                         <option value="email-only" ${response.data.fields.visibility==="email-only" ?"selected":""}>my email address only</option>
                         <option value="phone-only" ${response.data.fields.visibility==="phone-only" ?"selected":""}>my phone number only</option>
                         <option value="hide-all" ${response.data.fields.visibility==="hide-all" ?"selected":""}>no contact details</option>
                     </select><br><br>
-                    <input type="hidden" name="mode" value="update_member_data">
+                    <input type="hidden" name="mode" value="update_user_data">
                     <button id="submit_button" type="button" onclick="personal_data(form_data(this,true))">Update</button>
                 </form>   
             `    
@@ -166,19 +165,18 @@ async function personal_data(params){
 }    
 
 async function create_account(params){
+    if(!user_has_role(["owner","manager","administrator"])){show_home();return}
     const panel=tag("create_account_panel")
     hide_menu()
     
     if(!params){ 
         tag("canvas").innerHTML=` 
-        <div class="center-screen">
-            <div class="white-box">
-                <h2>Sign Up</h2>
-                <div id="create-account-message" style="width:170px;padding-top:1rem;margin-bottom:1rem">
-                Plant Simple Provo is an in-person support group.  Although we currently share our meetings over Zoom, the focus is on the in-person experience.
-                </div>
-                <div id="create_account_panel"></div>
+        <div class="page">
+            <h2>New Employee</h2>
+            <div id="create-account-message" style="width:170px;padding-top:1rem;margin-bottom:1rem">
+            Enter the new employee information here.  If present, the employee can enter a password of thier choosing; otherwise, make one up and they can reset it.
             </div>
+            <div id="create_account_panel"></div>
         </div>
         `
         create_account({action:"show-form"})
@@ -232,13 +230,21 @@ async function create_account(params){
     }else if(params.action==="show-form"){    
         if(panel.innerHTML===""){
             panel.style.display="block"
-            panel.innerHTML=`
-                <form>
-                    <input placeholder="First Name" name="first_name" id="1234"><br>
-                    <input placeholder="Last Name" name="last_name"><br>
-                    <input placeholder="Email Address" name="email"><br>
-                    <input placeholder="Phone Number" name="phone"><br>
-                    <input placeholder="Password" name="password" type="password"><br><br>
+            const html=[`
+            <form>
+                <input placeholder="First Name" name="first_name" id="1234"><br>
+                <input placeholder="Last Name" name="last_name"><br>
+                <input placeholder="Email Address" name="email"><br>
+                <input placeholder="Phone Number" name="phone"><br>
+                <input placeholder="Password" name="password" type="password"><br>
+                Store: <select name="store">
+                <option value="" selected></option>
+                `]
+
+                for(const store of store_sequence){
+                    html.push(`<option value="${stores[store]}">${store}</option>`)
+                }
+            html.push(`</select><br><br>
                     Other members can see ...<br>
                     <select name="visibility">
                         <option value="show-all" selected>my phone and email</option>
@@ -250,7 +256,8 @@ async function create_account(params){
                     <input type="hidden" name="confirm" value="${location.href.split("?")[0]}">
                     <button id="create_account_button" type="button" onclick="create_account(form_data(this,true))">Create Account</button>
                 </form>   
-            `    
+            `)
+            panel.innerHTML=html.join("")
             tag("1234").focus()
         }else{
             toggle(panel)
@@ -286,6 +293,7 @@ async function confirm_account(params){
 
 
 async function change_password(params){
+    if(!logged_in()){show_home();return}
     const panel=tag("password_panel")
 
     if(!params){// no parameters sent, just build the form
@@ -338,6 +346,7 @@ async function change_password(params){
   
 
 async function update_user(params,panel){
+    if(!user_has_role(["owner","manager","administrator"])){show_home();return}
     if(!panel){panel=tag("update_user")}
     if(typeof params === "string"){
         // passing in just an email address to be updated
@@ -400,6 +409,7 @@ async function update_user(params,panel){
 }
 
 async function recover_password(params){
+    console.log("recover_password", params)
     const panel=tag("recover")
     if(!params){
         if(panel.innerHTML===""){
@@ -423,7 +433,7 @@ async function recover_password(params){
         panel.style.display="block"
         panel.innerHTML=`
         <form>
-        <input placeholder="New Password" name="password"><br>
+        <input placeholder="New Password" name="password" type="password"><br>
         <input type="hidden" name="email" value="${params.email}">
         <input type="hidden" name="code" value="${params.code}">
         <input type="hidden" name="mode" value="reset_password">
@@ -469,7 +479,7 @@ async function recover_password(params){
             panel.innerHTML=`
             <form>
             <input placeholder="Code from Email" name="code"><br>
-            <input placeholder="New Password" name="password"><br>
+            <input placeholder="New Password" name="password" type="password"><br>
             <input type="hidden" name="email" value="${params.email}">
             <input type="hidden" name="mode" value="reset_password">
             <button id="recover_password_button" type="button" onclick="recover_password(form_data(this,true))">Reset Password</button>
@@ -532,3 +542,22 @@ function message(params){
 
 }
 
+function logged_in(){
+    return !!get_cookie("auth")
+}
+
+function user_has_role(array_of_permitted_roles){
+    //returns true if the logged in user has at least one of the roles specified
+    // if no roles specified, returns true if the user is logged in
+    if(array_of_permitted_roles){
+        if(typeof array_of_permitted_roles==="string"){
+            // intersect requires arrays and the caller sent a string, make it an array
+            return intersect(get_user_data().roles,[array_of_permitted_roles]).length>0
+        }else{
+            return intersect(get_user_data().roles,array_of_permitted_roles).length>0
+        }   
+    }else{
+        // no roles specified, just need to be logged in
+        return !!get_cookie("auth")
+    }
+}

@@ -42,7 +42,7 @@ h2{
     padding:1rem;
     text-align: left;
     border-radius: 5px;
-    border: 2px midnightblue solid;
+    border: 2px lightgrey solid;
 }
 
 #welcome p{
@@ -73,6 +73,7 @@ h2{
 
 }
 
+
 .inventory-table th {
     color: maroon;
     background-color: lightyellow;
@@ -101,7 +102,7 @@ h2{
     width:100%;
     border:none;
     text-align: right;
-    background-color: transparent;
+    background-color: ivory;
 }
 
 

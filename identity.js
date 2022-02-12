@@ -45,7 +45,7 @@ async function initialize_app(){
     }
     const params = url_parameters()
     history.replaceState(params,"",location.href)
-    console.log("params",params)
+    console.log("params->",params)
     navigate(params,false,false)
 
 }
@@ -85,7 +85,11 @@ function navigate(parameters, show_url=true, place_in_browser_history=true){
         //if params is an empty object, don't send params
         fn()
     }else{
-        fn(params.params)
+        if(params.params){
+          fn(params.params)
+        }else{
+          fn(params)
+        }  
     }
     
 }
