@@ -461,7 +461,7 @@ function move_down(source){
 
 async function update_observation(entry){
     //console.log(entry.parentElement)
-
+    if(!logged_in()){show_home();return}
     // add data validation
     if(isNaN(entry.value)){
         entry.parentElement.style.backgroundColor="lightGray"

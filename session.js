@@ -245,7 +245,7 @@ async function create_account(params){
                     html.push(`<option value="${stores[store]}">${store}</option>`)
                 }
             html.push(`</select><br><br>
-                    Other members can see ...<br>
+                    Other employees can see ...<br>
                     <select name="visibility">
                         <option value="show-all" selected>my phone and email</option>
                         <option value="email-only">my email address only</option>
