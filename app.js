@@ -247,9 +247,9 @@ async function ice_cream_inventory(params){
                             data[id]={quantity:record.fields.quantity,date:record.fields.date}
                         }
                     }
-                    console.log("=========================data=================================")
-                    console.log(data)
-                    console.log("===========================================================")
+                    // console.log("=========================data=================================")
+                    // console.log(data)
+                    // console.log("===========================================================")
     
                     // now fill the existing data
                     for(const[key,value] of Object.entries(data)){
@@ -284,11 +284,15 @@ async function ice_cream_inventory(params){
                     `]
                 let p=1 // map store ids to column numbers.  only needed for this loop then can be reused
                 for(container of response.list.records[0].fields.container){
-                    header.push(`<th>${container}</th>`)
+                    let cont=container
+                    if(cont==="Walk-in Freezers" && stores[params.store]==="Vineyard"){
+                        cont=cont + " &amp;<br>Hardening Cabinets"
+                    }
+                    header.push(`<th>${cont}</th>`)
                     window.cols[p]=container
                     window.cols[container]=p++
                 }     
-                header.push("</tr>")
+                header.push('<th>Total</th></tr>')
                 html.push(header.join(""))
                 irregular=[]// icecreame not in regular category
 
@@ -307,7 +311,7 @@ async function ice_cream_inventory(params){
                     for(container of record.fields.container){
                         target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
                     }     
-                    target.push("</tr>")
+                    target.push(`<td  style="background-color:lightYellow" id="${record.id}|total"></td></tr>`)
                 }     
                 html.push("</table>")
                 html.push("<br>In this section, fill in only the rows corresponding to flavors you have on hand.")
@@ -319,11 +323,15 @@ async function ice_cream_inventory(params){
                 // add quick buttons
                 for(const [key,row] of Object.entries(window.rows)){
                     if(isNaN(row)){
-                        for(const [key,col] of Object.entries(window.cols)){
-                            if(isNaN(col)){
-                                add_buttons(row,col)
-                            }
-                        }
+                        add_buttons(row,"Dipping Cabinet")
+
+                        // //this is for all columns.  Brian wants only dipping cabinet
+                        // for(const [key,col] of Object.entries(window.cols)){
+                        //     if(isNaN(col)){
+                        //         console.log("++++++++++++++", col)
+                        //         add_buttons(row,col)
+                        //     }
+                        // }
                     }
                 }
 
@@ -355,6 +363,14 @@ async function ice_cream_inventory(params){
                     }
                 }
 
+                // now that the data have been entered, total the rows
+                for(const [key,row] of Object.entries(window.rows)){
+                    if(isNaN(row)){
+                        console.log(row)
+                        tag(row + "|total").innerHTML = flavor_total(row)
+                    }
+                }
+
                 tag("inventory_panel").addEventListener("keyup", function(event) {
                     if (event.keyCode === 13) {
                       move_down(event.target);
@@ -369,9 +385,7 @@ async function ice_cream_inventory(params){
         }else{
             tag("inventory_panel").innerHTML="Unable to get inventory list: " + response.message + "."
         }
-
     }  
-
 }
 function add_buttons(row,col){
     const box = tag(row + "|" + col.replace(/\s/g,"_"))    
@@ -458,6 +472,16 @@ function move_down(source){
     tag(next_flavor + "|" + next_container.replace(/\s/g,"_")).focus()
 }
 
+function flavor_total(flavor_id){
+    let flavor_total=0
+    for(const key of Object.keys(window.cols)){
+        if(isNaN(key)){
+            console.log(flavor_id + "|" + key.replace(/\s/g,"_"))
+            flavor_total += parseFloat(tag(flavor_id + "|" + key.replace(/\s/g,"_")).value) || 0
+        }
+    }
+    return flavor_total
+}
 
 async function update_observation(entry){
     //console.log(entry.parentElement)
@@ -476,7 +500,7 @@ async function update_observation(entry){
 
         return
     }
-
+    const flavor_id = entry.id.split("|")[0]
     const params={
         item_id:entry.dataset.item_id,
         quantity:entry.value,
@@ -494,7 +518,8 @@ async function update_observation(entry){
         const response=await post_data(params)    
         console.log("update response", response)
         if(response.status==="success"){
-
+            console.log("updated", flavor_total)
+            tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
             entry.parentElement.className=null
             entry.parentElement.style.backgroundColor="lightYellow"
             entry.dataset.obs_id=response.records[0].id
@@ -517,6 +542,7 @@ async function update_observation(entry){
         const response=await post_data(params)    
         console.log("insert response", response)
         if(response.status==="success"){
+            tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
             entry.parentElement.className=null
             entry.parentElement.style.backgroundColor="lightYellow"
             entry.dataset.obs_id=response.records[0].id
