@@ -6,15 +6,18 @@ const base=window.location.protocol + "//" + window.location.host + "/"
 
 
 async function post_data(payload){
-    working()
-    if(document.cookie){
+    //This function is used to invoke a function in Google App Script to interact with Airtable. This is desireable so that we can isolate the information needed to interact with the data from the client browser.
+    working()//This function is used to present a visual cue to the user that the site is performing an update.
+    if(document.cookie){//cookies are used to manage authenticated user information. The cookies are sent to Google App Script to ensure that users have appropriate authication and credentials update the database.
       payload.cookie=document.cookie
     }
-    console.log("const payload=`" + JSON.stringify(payload) + "`")
+    console.log("const payload=`" + JSON.stringify(payload) + "`")//This is primarily useful for troubleshooting. The data passed to Google App Script is sent to the console.
+    //The request for Google App Script is formatted.
     const reply = await fetch(gas_end_point, { 
         method: "POST", 
         body: JSON.stringify(payload),
     })
+    //The request is made of Google App Script and the response is set to "response"
     const response = await reply.json()
     working(false)
     console.log("in post data", response)     
@@ -25,17 +28,20 @@ async function post_data(payload){
             set_cookie(entry.name,entry.data,response.cookie_days)
         }
     }
+    //the response from google app script is returned.
     return response
 }
 
 
 async function initialize_app(){
+    //This function initializes the page when it is loaded.
     let state="{}"
     window.onpopstate = function (event) {
         // call the function built into the URL
         navigate(event.state)
         //window[event.state.fn](event.state)
     };
+    //If the user is authenticated, populate the authenticated menu is loaded. Otherwise the unautheticated menu is loaded.
     if(get_cookie("auth")){
         build_menu(authenticated_menu)
     }else{
@@ -43,6 +49,7 @@ async function initialize_app(){
         build_menu(unauthenticated_menu)
         console.log('just built menu')
     }
+    //setup the page to interact well with browser features.
     const params = url_parameters()
     history.replaceState(params,"",location.href)
     console.log("params->",params)
@@ -108,13 +115,13 @@ function json_params_for_url(params){ // encode an object without the trailing e
     return data    
 }
 
-async function submit_form(form){
+async function submit_form(form){//this function is not used, but could be used to submit form data to google app script to update Airtable.
     return await post_data(form_data(form))
 }
 
 function form_data(form,spin){
     const payload={}
-    // bubble up to find the form
+    // bubble up to find the form from a submit button
     if(form.tagName==="BUTTON" && spin){
         payload.button=form.innerHTML
         form.innerHTML='<i class="fas fa-spinner fa-pulse"></i>'
@@ -178,7 +185,7 @@ function url_parameters(){
 }
 
 
-function set_cookie(name,value,days) {
+function set_cookie(name,value,days) {//used to update cookie information
     var expires = "";
     if (days) {
         var date = new Date();
@@ -188,7 +195,7 @@ function set_cookie(name,value,days) {
     document.cookie = name + "=" + (value || "")  + expires + "; path=/";
 }
 
-function get_cookie(name) {
+function get_cookie(name) {//used to retrieve cookie by name
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
     for(var i=0;i < ca.length;i++) {
@@ -199,7 +206,7 @@ function get_cookie(name) {
     return null;
 }
 
-function erase_cookie(name) {   
+function erase_cookie(name) {//used to delete a cookie by name
     console.log("at erase cookie", name)
     set_cookie(name,"deleted",-2)
     //document.cookie = name+'=; Max-Age=-99999999;';  
@@ -218,7 +225,7 @@ function build_menu(menu_data){
     tag("menu").innerHTML=menu.join("")
 }
 
-function add_menu_item(menu, menu_data, roles){
+function add_menu_item(menu, menu_data, roles){//used to add a menu item
     if(menu_data.menu && !menu_data.label){
         // it must be an import of another menu
         for(const item of menu_data.menu){
@@ -270,28 +277,28 @@ function add_menu_item(menu, menu_data, roles){
     }
 }
 
-function show_menu(){
+function show_menu(){//This function displays the menu
     tag("menu-button").style.display="none"
     tag("menu").style.display="block"
 }
-function hide_menu(){
+function hide_menu(){//Used to hide the menu (show only the parallel lines)
     tag("menu-button").style.display="block"
     tag("menu").style.display="none"
 }
-function click_menu(){
+function click_menu(){//not used
     alert("hello")
 }
-function tag(id){
+function tag(id){//Adds an ID to an HTML element
     return document.getElementById(id)
 }
-function toggle_sub_menu(button, id){
+function toggle_sub_menu(button, id){//Used to expande and collapse submenus
     if(toggle(id)){
         button.getElementsByTagName("i")[0].className="fas fa-chevron-up"
     }else{
         button.getElementsByTagName("i")[0].className="fas fa-chevron-down"
     }
 }
-function working(status=true){
+function working(status=true){//used to present a visual cue (spinning wheel) to show that the app is processing
     try{  
         if(status){
             tag("hamburger").className="fas fa-spinner fa-pulse"
@@ -323,11 +330,11 @@ console.log("element", element)
         return true
     }
 }
-function f1(){
+function f1(){//not used
     alert("hello")
 }
 
-function show_message(message, tag_or_id, seconds){
+function show_message(message, tag_or_id, seconds){//used to display alerts to the user. The alert can be set to disappear after a specified number of seconds.
   console.log("at show message", tag_or_id, message)
 
   let element=tag_or_id

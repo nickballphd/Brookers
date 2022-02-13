@@ -1,4 +1,4 @@
-// This is for really stable data so we don't have to ask for it every time
+// This is for really stable data so we don't have to ask for it every time. Since stores, rarely change and we aren't worried about this information being available to the user, we store the set of stores and their primary key values from Airtable.
 
 store_sequence=[
     "Vineyard",
