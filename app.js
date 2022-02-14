@@ -372,9 +372,9 @@ async function ice_cream_inventory(params){
                     target.push(`<th>${record.fields.name}</th>`)
                     //build a text input in each cell. Use the combination of the flavor and container ids as the identifier of the input so that we can use it to update the correct record. When a value in the input is change (onchange), the update_observation function is called and passed the value and information needed (store, flavor, and container) to add the observation to the database. update_observation is a function in Amazon App Script.
                     for(container of record.fields.container){
-                        target.push(`<td class="col-${window.cols[container]}"><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
+                        target.push(`<td class="active col-${window.cols[container]}"><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
                     }     
-                    target.push(`<td  style="background-color:lightYellow" id="${record.id}|total"></td></tr>`)//This sets the background color for items that have been updated to provide a visual cue that the element has been updated.
+                    target.push(`<td  class="inactive" id="${record.id}|total"></td></tr>`)//This sets the background color for items that have been updated to provide a visual cue that the element has been updated.
                 }     
                 html.push("</table>")
                 //add form to collect observations for the irregular items
@@ -415,7 +415,8 @@ async function ice_cream_inventory(params){
                                 div.style.color="black"
                             }
                         }
-                        box.parentElement.style.backgroundColor="lightYellow"
+                        box.parentElement.classList.add("inactive")
+                        box.parentElement.classList.remove("active")
                     }
                 }
 
@@ -615,7 +616,8 @@ async function update_observation(entry){
             console.log("updated", flavor_total)
             tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
             entry.parentElement.className=null
-            entry.parentElement.style.backgroundColor="lightYellow"
+            entry.parentElement.classList.remove("active")
+            entry.parentElement.classList.add("inactive")
             entry.dataset.obs_id=response.records[0].id
             return true
         }else{//if the value is not successfully updated, the appearance of the cell is changed to reflect an error and an error message is presented to the user.
@@ -639,7 +641,8 @@ async function update_observation(entry){
         if(response.status==="success"){//If it is inserted correctly, the appearance of the cell is changed to reflect the update.
             tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
             entry.parentElement.className=null
-            entry.parentElement.style.backgroundColor="lightYellow"
+            entry.parentElement.classList.remove("active")
+            entry.parentElement.classList.add("inactive")
             entry.dataset.obs_id=response.records[0].id
             return true
         }else{//If it is not inserted correctly, the appearance of the cell is changed to reflect the error and the error message is presented.

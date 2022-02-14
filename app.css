@@ -82,7 +82,6 @@ h2{
 }
 .inventory-table td {
     color: black;
-    background-color: white;
     margin:1px;
     padding: 4px 8px 4px 8px;
     white-space: nowrap;
@@ -112,6 +111,12 @@ h2{
 
 .hidden{
     display:none;
+}
+.inactive{
+    background-color: lightyellow;
+}
+.active{
+    background-color: white;
 }
 
 
