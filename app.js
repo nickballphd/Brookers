@@ -47,8 +47,8 @@ const authenticated_menu=[
     //This menu item adds the menu item for updating an inventory count. Notice how a parameter is passed to the "ice_cream_inventory" function
     {label:"Enter Ice Cream Inventory",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'update'}})"},
     //the remaining menu items are added
+    {label:"Ice Cream Inventory Summary",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["owner","administrator"]},
     {label:"Employee List",function:"navigate({fn:'employee_list'})"},
-    {label:"Ice Cream Inventory Summary",home:"Inventory",function:"navigate({fn:'ice_cream_inventory',params:{style:'summary'}})", roles:["owner"]},
     {label:"Admin Tools",id:"menu2", roles:["manager","owner","administrator"], menu:[
         {label:"Update User",function:"update_user()",panel:"update_user"},
         {label:"Archive Inventory",function:"navigate({fn:'archive_inventory'})"},
@@ -172,8 +172,7 @@ async function ice_cream_inventory(params){
 
     //First we hide the menu
     hide_menu()
-    console.log('params',params)
-    console.log('params',params.params)
+    console.log('at ice_cream_inventory.  params:',params)
 
     //This function is set up recursively to build the page for working with inventory. The first time the function is called, the HTML shell is created for displaying either the inventory form for recording the count or the inventory report. Note that this will only be built if there is a "style" property set when the function is called. Once the shell is created, the function is called again to either built the form for recording an inventory count or create the summary report.
     if(params.style){
@@ -207,7 +206,7 @@ async function ice_cream_inventory(params){
             ice_cream_inventory({
                 mode:"get_inventory_list",
                 filter:"list='Ice Cream'",
-                store:user_data.store
+                store:user_data.store,
             })
 
           }else{
@@ -250,14 +249,14 @@ async function ice_cream_inventory(params){
                 const header=[`
                 <table class="inventory-table">
                     <tr>
-                    <th>Flavor</th>
+                    <th class="sticky">Flavor</th>
                     `]
                 for(const store of store_sequence){
-                    header.push(`<th>${store}</th>`)
+                    header.push(`<th class="sticky">${store}</th>`)
 
                 }   
 
-                header.push(`<th>Total</th>`)
+                header.push(`<th class="sticky">Total</th>`)
                 header.push("</tr>")
                 const html=[header.join("")]
 
@@ -338,23 +337,24 @@ async function ice_cream_inventory(params){
                 const header=[`
                 <table class="inventory-table">
                     <tr>
-                    <th>Flavor</th>
+                    <th class="sticky" onclick="show_elements(['col-1','col-2','col-3'])">Flavor</th>
                     `]
                 let p=1 // map store ids to column numbers.  only needed for this loop then can be reused
                 
                 //add table headers for the "containers" (freezers) where inventory will be counted. Note that only the "Vineyard" location has a "Hardening Cabinet"
                 for(container of response.list.records[0].fields.container){
+                    window.cols[p]=container
+                    window.cols[container]=p++
                     let cont=container
                     if(cont==="Walk-in Freezers" && stores[params.store]==="Vineyard"){
                         cont=cont + " &amp;<br>Hardening Cabinets"
                     }
-                    header.push(`<th>${cont}</th>`)
-                    window.cols[p]=container
-                    window.cols[container]=p++
+                    console.log("container",container)
+                    header.push(`<th onclick="hide_elements('col-${window.cols[container]}')" class="sticky col-${window.cols[container]}" >${cont}</th>`)
                 }     
-                header.push('<th>Total</th></tr>')
+                header.push('<th class="sticky">Total</th></tr>')
                 html.push(header.join(""))
-                irregular=[]// icecreame not in regular category
+                irregular=[]// ice cream not in regular category
 
                 p=1// for keeping track of navigating rows.  can be reused after this loop
                 for(record of response.list.records){
@@ -372,7 +372,7 @@ async function ice_cream_inventory(params){
                     target.push(`<th>${record.fields.name}</th>`)
                     //build a text input in each cell. Use the combination of the flavor and container ids as the identifier of the input so that we can use it to update the correct record. When a value in the input is change (onchange), the update_observation function is called and passed the value and information needed (store, flavor, and container) to add the observation to the database. update_observation is a function in Amazon App Script.
                     for(container of record.fields.container){
-                        target.push(`<td><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
+                        target.push(`<td class="col-${window.cols[container]}"><input id="${record.id}|${container.replace(/\s/g,"_")}" data-store="${params.store}" data-item_id="${record.id}" data-container="${container}" type="text" onchange="update_observation(this)"></td>`)
                     }     
                     target.push(`<td  style="background-color:lightYellow" id="${record.id}|total"></td></tr>`)//This sets the background color for items that have been updated to provide a visual cue that the element has been updated.
                 }     
@@ -409,7 +409,7 @@ async function ice_cream_inventory(params){
                         box.dataset.obs_id=record.id
                         box.value=record.fields.quantity
                         for(const div of getAllSiblings(box)){
-                            console.log(div.tagName,div.innerHTML,record.fields.quantity,val_map[div.innerHTML],record.fields.quantity===val_map[div.innerHTML])
+                           // console.log(div.tagName,div.innerHTML,record.fields.quantity,val_map[div.innerHTML],record.fields.quantity===val_map[div.innerHTML])
                             if(div.tagName==="DIV" && record.fields.quantity===val_map[div.innerHTML]){
                                 div.style.backgroundColor="lightGrey"
                                 div.style.color="black"
@@ -422,7 +422,7 @@ async function ice_cream_inventory(params){
                 // now that the data have been entered, total the rows. This will be updated every time a value is updated in the database.
                 for(const [key,row] of Object.entries(window.rows)){
                     if(isNaN(row)){
-                        console.log(row)
+                        //console.log(row)
                         tag(row + "|total").innerHTML = flavor_total(row)
                     }
                 }
@@ -444,6 +444,32 @@ async function ice_cream_inventory(params){
     }  
 }
 
+function hide_elements(className){// adds the hidden class to all elements of the given class name
+    if(Array.isArray(className)){
+        var classes=className
+    }else{
+        var classes=[className]
+    }
+
+    for(const one_class of classes){
+        for(const elem of document.getElementsByClassName(one_class)){
+            elem.classList.add("hidden")
+        }
+    }
+}
+function show_elements(className){// remvoes the hidden class to all elements of the given class name
+    if(Array.isArray(className)){
+        var classes=className
+    }else{
+        var classes=[className]
+    }
+    
+    for(const one_class of classes){
+        for(const elem of document.getElementsByClassName(one_class)){
+            elem.classList.remove("hidden")
+        }
+    }
+}
 
 function add_buttons(row,col){
     //this function is used to create the input buttons for recording the inventory observations. Notice that we only use the options for case 3. We might use the other options in the future.
@@ -538,7 +564,7 @@ function flavor_total(flavor_id){
     let flavor_total=0
     for(const key of Object.keys(window.cols)){
         if(isNaN(key)){
-            console.log(flavor_id + "|" + key.replace(/\s/g,"_"))
+           // console.log(flavor_id + "|" + key.replace(/\s/g,"_"))
             flavor_total += parseFloat(tag(flavor_id + "|" + key.replace(/\s/g,"_")).value) || 0
         }
     }

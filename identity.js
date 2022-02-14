@@ -119,23 +119,28 @@ async function submit_form(form){//this function is not used, but could be used 
     return await post_data(form_data(form))
 }
 
-function form_data(form,spin){
-    const payload={}
-    // bubble up to find the form from a submit button
-    if(form.tagName==="BUTTON" && spin){
-        payload.button=form.innerHTML
-        form.innerHTML='<i class="fas fa-spinner fa-pulse"></i>'
+function form_data(html_tag,spin){
+    // read the informatoin from a form and put it into an object, ready to be sent to post_data
+    const payload={}// the object to return with the form's values
+    // if the html_tag sent it is a button, and spin is true, change the button's text to a spinner
+    if(html_tag.tagName==="BUTTON"){
+        payload.button=html_tag.innerHTML  // record the button that was pressed.  This will be useful when there are many buttons on a form and you need to know which a user pressed
+        if(spin){
+          html_tag.innerHTML='<i class="fas fa-spinner fa-pulse"></i>'
+        }
     }
-    while(form.tagName !== "FORM"){
-        console.log('form',form)
-        form=form.parentElement
-        if(form.tagName==="BODY"){
+
+    // search up the html element hierarchy to find the form
+    while(html_tag.tagName !== "FORM"){
+        console.log('html_tag',html_tag)
+        html_tag=html_tag.parentElement
+        if(html_tag.tagName==="BODY"){
             throw 'Object submitted is not a form and us not contained in a form.'; 
         }
     }
 
-    
-    for(const element of form.elements){
+    // now we know that html_tag is a form, so read the values and bulid the object
+    for(const element of html_tag.elements){
         console.log(element.tagName, element)
         if((element.tagName==="INPUT" || element.tagName==="SELECT" ||  element.tagName==="TEXTAREA") && element.name){
             // it's a tag with data
@@ -159,6 +164,7 @@ function form_data(form,spin){
     }
     return payload
 }
+
 
 
 
