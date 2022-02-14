@@ -601,7 +601,7 @@ async function update_observation(entry){
     }
     //visually signal by modifying the appearance of the cell that the value is currently being updated.
     entry.parentElement.style.backgroundColor=null
-    entry.parentElement.className="working"
+    entry.parentElement.classList.add("working")
     
     if(entry.dataset.obs_id){
         // there is already a record for this item.  update it
@@ -615,7 +615,7 @@ async function update_observation(entry){
         if(response.status==="success"){//if the value is successfully updated, the appearance of the cell is changed to reflect the update.
             console.log("updated", flavor_total)
             tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
-            entry.parentElement.className=null
+            entry.parentElement.classList.remove("working")
             entry.parentElement.classList.remove("active")
             entry.parentElement.classList.add("inactive")
             entry.dataset.obs_id=response.records[0].id
@@ -640,7 +640,7 @@ async function update_observation(entry){
         
         if(response.status==="success"){//If it is inserted correctly, the appearance of the cell is changed to reflect the update.
             tag(flavor_id + "|total").innerHTML = flavor_total(flavor_id)
-            entry.parentElement.className=null
+            entry.parentElement.classList.remove("working")
             entry.parentElement.classList.remove("active")
             entry.parentElement.classList.add("inactive")
             entry.dataset.obs_id=response.records[0].id
